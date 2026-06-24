@@ -1,0 +1,36 @@
+body{
+    font-family: Arial, sans-serif;
+    text-align:center;
+    background:#f4f4f4;
+}
+
+h1{
+    color:#2563eb;
+}
+
+#board{
+    display:grid;
+    grid-template-columns:repeat(10,40px);
+    gap:4px;
+    justify-content:center;
+    margin:20px;
+}
+
+.cell{
+    width:40px;
+    height:40px;
+    background:white;
+    border:1px solid #ccc;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.selected{
+    background:#2563eb;
+    color:white;
+}

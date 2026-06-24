@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🔥 SOPA DE LETRAS | ARRASTRA Y SOMBREA 🔥</title>
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<link rel="icon" href="sopa.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0f1a 0%, #0e1725 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
+            padding: 20px;
+        }
+
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(8, 18, 28, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 48px;
+            padding: 20px 24px 28px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 180, 80, 0.3);
+        }
+
+        /* PALABRAS ARRIBA */
+        .palabras-area {
+            background: linear-gradient(95deg, #14212b, #0c1620);
+            border-radius: 50px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            border: 1px solid #ffb34766;
+        }
+
+        .palabras-area h2 {
+            font-size: 1rem;
+            letter-spacing: 3px;
+            color: #ffcf8a;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .lista-palabras {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            list-style: none;
+        }
+
+        .lista-palabras li {
+            background: #1e2f3a;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            font-family: 'Courier New', monospace;
+            color: #f7d98c;
+            border-left: 5px solid #f39c12;
+            box-shadow: 0 3px 0 #0a1219;
+            transition: 0.1s;
+            cursor: pointer;
+        }
+
+        .lista-palabras li.encontrada {
+            background: #2c7a5e;
+            color: #d4ffb0;
+            text-decoration: line-through;
+            text-decoration-thickness: 2px;
+            opacity: 0.7;
+            border-left-color: #a3e0a0;
+            cursor: default;
+        }
+
+        .lista-palabras li.seleccionada {
+            background: #e67e22;
+            color: #1e1a0c;
+            border-left-color: #ffdd88;
+            transform: scale(1.02);
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #07121cee;
+            border-radius: 60px;
+            padding: 8px 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .vidas {
+            background: #2c1a0e;
+            padding: 5px 20px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .vidas-num {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #ff9966;
+            background: #1f0f05;
+            padding: 0 16px;
+            border-radius: 50px;
+            min-width: 65px;
+            text-align: center;
+        }
+
+        .aciertos {
+            background: #1b4d2e;
+            padding: 5px 22px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #d4ffb0;
+        }
+
+        .mensaje {
+            background: #000000aa;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #ffdfb3;
+        }
+
+        /* TABLERO 10x10 - MÁS PEQUEÑO Y CON ESPACIO AMPLIO */
+        #board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 20px 15px;
+            border-radius: 32px;
+            margin: 15px 0;
+        }
+
+        .celda {
+            aspect-ratio: 1 / 1;
+            background: radial-gradient(circle at 30% 25%, #fff7e8, #ffefcf);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.5rem;
+            font-family: 'Fira Code', monospace;
+            color: #1e3b44;
+            cursor: pointer;
+            transition: 0.05s linear;
+            box-shadow: 0 5px 0 #b97f3f;
+            border: 1px solid #ffdaa0;
+            transform: translateY(-2px);
+        }
+
+        .celda:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #b97f3f;
+        }
+
+        /* Celdas sombreadas durante arrastre */
+        .celda.sombreada {
+            background: #f39c12;
+            color: #1e2a0c;
+            box-shadow: 0 0 0 3px #ffe6aa;
+            transform: scale(0.96);
+        }
+
+        /* Palabra ya encontrada permanentemente */
+        .celda.permanent {
+            background: #27ae60;
+            color: white;
+            box-shadow: inset 0 0 0 2px #c6ffb0;
+            cursor: default;
+            opacity: 0.85;
+            transform: scale(0.97);
+        }
+
+        button {
+            background: linear-gradient(95deg, #f09819, #ff6a00);
+            border: none;
+            font-size: 1.1rem;
+            font-weight: bold;
+            padding: 10px 32px;
+            border-radius: 60px;
+            color: #2c1b0c;
+            cursor: pointer;
+            margin-top: 8px;
+            box-shadow: 0 6px 0 #914d00;
+            transition: 0.05s linear;
+        }
+
+        button:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #914d00;
+        }
+
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 16px;
+            font-size: 0.7rem;
+            color: #bbaa88;
+        }
+
+        @media (max-width: 550px) {
+            #board {
+                gap: 6px;
+            }
+            .celda {
+                font-size: 1.1rem;
+                border-radius: 12px;
+            }
+            .lista-palabras li {
+                font-size: 0.8rem;
+                padding: 4px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <link rel="manifest" href="manifest.json">
+<link rel="icon" href="sopa.png">
+<meta name="theme-color" content="#2563eb">
+    <!-- Palabras ARRIBA -->
+    <div class="palabras-area">
+        <h2>📜 ENCUENTRA Y SOMBREA CADA PALABRA</h2>
+        <ul id="listaPalabras" class="lista-palabras"></ul>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="vidas">
+            <span>💔</span>
+            <span class="vidas-num" id="errorCount">0</span>
+            <span>/ 3</span>
+        </div>
+        <div class="aciertos">
+            🎯 <span id="hitCount">0</span> / <span id="totalCount">0</span>
+        </div>
+        <div class="mensaje" id="msgArea">
+            🔥 1. Haz clic en palabra → 2. Arrastra sobre sus letras
+        </div>
+    </div>
+
+    <!-- Tablero 10x10 -->
+    <div id="board"></div>
+
+    <div style="text-align: center;">
+        <button id="resetBtn">🔄 NUEVA PARTIDA</button>
+    </div>
+    <div class="footer">
+        <span>👉 Mantén clic y arrastra sobre las letras para sombrear la palabra completa</span>
+        <span>⚠️ Si sombreas mal = error | 3 errores = Game Over</span>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // SOPA DE LETRAS 10x10 - ARRASTRAR Y SOMBREAR
+    // ============================================================
+
+    const TAM = 10;  // TABLERO MÁS PEQUEÑO
+    const MAX_ERRORS = 3;
+
+    const POOL = [
+        "JAVA", "PYTHON", "REACT", "ANGULAR", "NODE", "VUE", "HTML", "CSS",
+        "DRAGON", "PHOENIX", "WIZARD", "ORACLE", "FALCON", "KRAKEN", "NEBULA",
+        "COSMOS", "ZENITH", "VORTEX", "THOR", "LOKI", "EMBER", "GHOST",
+        "SHADOW", "OMEGA", "ALPHA", "MATRIX", "VECTOR", "JAGUAR", "VIPER"
+    ];
+
+    const DIRS = [
+        [0,1], [1,0], [1,1], [1,-1],
+        [0,-1], [-1,0], [-1,-1], [-1,1]
+    ];
+
+    let grid = [];
+    let currentWords = [];
+    let wordsFound = [];
+    let wordsPositions = new Map();
+    let wordsDirection = new Map();
+
+    let errors = 0;
+    let hits = 0;
+    let gameActive = true;
+
+    let selectedWord = null;
+    let selectedWordIdx = -1;
+
+    // Arrastre
+    let isDragging = false;
+    let draggedCells = new Set();
+    let mouseUpHandlerAttached = false;
+
+    // DOM
+    const boardDiv = document.getElementById("board");
+    const wordListUl = document.getElementById("listaPalabras");
+    const errorSpan = document.getElementById("errorCount");
+    const hitSpan = document.getElementById("hitCount");
+    const totalSpan = document.getElementById("totalCount");
+    const msgSpan = document.getElementById("msgArea");
+    const resetBtn = document.getElementById("resetBtn");
+
+    // ---------- GENERAR TABLERO ----------
+    function getUniqueWords(count) {
+        let shuffled = [...POOL];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled.slice(0, Math.min(count, shuffled.length));
+    }
+
+    function canPlace(word, row, col, dx, dy, mat) {
+        for (let i = 0; i < word.length; i++) {
+            const nr = row + i * dx, nc = col + i * dy;
+            if (nr < 0 || nr >= TAM || nc < 0 || nc >= TAM) return false;
+            if (mat[nr][nc] !== '' && mat[nr][nc] !== word[i]) return false;
+        }
+        return true;
+    }
+
+    function placeWord(word, row, col, dx, dy, mat, posMap, dirMap) {
+        const coords = [];
+        for (let i = 0; i < word.length; i++) {
+            const nr = row + i * dx, nc = col + i * dy;
+            mat[nr][nc] = word[i];
+            coords.push({ fila: nr, col: nc });
+        }
+        posMap.set(word, coords);
+        dirMap.set(word, [dx, dy]);
+        return true;
+    }
+
+    function insertWord(word, mat, posMap, dirMap, attempts = 1500) {
+        for (let i = 0; i < attempts; i++) {
+            const row = Math.floor(Math.random() * TAM);
+            const col = Math.floor(Math.random() * TAM);
+            const dir = DIRS[Math.floor(Math.random() * DIRS.length)];
+            const [dx, dy] = dir;
+            if (canPlace(word, row, col, dx, dy, mat)) {
+                placeWord(word, row, col, dx, dy, mat, posMap, dirMap);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function fillRandom(mat) {
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        for (let i = 0; i < TAM; i++) {
+            for (let j = 0; j < TAM; j++) {
+                if (mat[i][j] === '') mat[i][j] = letters[Math.floor(Math.random() * letters.length)];
+            }
+        }
+    }
+
+    function generateBoard(wordCount = 6) {
+        let words = getUniqueWords(wordCount);
+        let matrix = Array(TAM).fill().map(() => Array(TAM).fill(''));
+        let posMap = new Map();
+        let dirMap = new Map();
+        let sorted = [...words].sort((a,b) => b.length - a.length);
+        let success = true;
+        for (let w of sorted) {
+            if (!insertWord(w, matrix, posMap, dirMap, 1500)) {
+                success = false;
+                break;
+            }
+        }
+        if (!success) return generateBoard(wordCount);
+        fillRandom(matrix);
+        return { matrix, words, posMap, dirMap };
+    }
+
+    // ---------- RENDER ----------
+    function renderBoard() {
+        boardDiv.innerHTML = "";
+        boardDiv.style.gridTemplateColumns = `repeat(${TAM}, 1fr)`;
+        for (let i = 0; i < TAM; i++) {
+            for (let j = 0; j < TAM; j++) {
+                const cell = document.createElement("div");
+                cell.className = "celda";
+                cell.textContent = grid[i][j];
+                cell.dataset.row = i;
+                cell.dataset.col = j;
+
+                let isPermanent = false;
+                for (let idx = 0; idx < currentWords.length; idx++) {
+                    if (wordsFound[idx]) {
+                        const coords = wordsPositions.get(currentWords[idx]);
+                        if (coords && coords.some(c => c.fila === i && c.col === j)) {
+                            isPermanent = true;
+                            break;
+                        }
+                    }
+                }
+                if (isPermanent) cell.classList.add("permanent");
+
+                cell.addEventListener("mousedown", (e) => startDrag(e, cell));
+                cell.addEventListener("mouseenter", (e) => dragOver(e, cell));
+                cell.addEventListener("touchstart", (e) => startDragTouch(e, cell));
+                cell.addEventListener("touchmove", (e) => dragOverTouch(e, cell));
+
+                boardDiv.appendChild(cell);
+            }
+        }
+    }
+
+    function renderWordList() {
+        wordListUl.innerHTML = "";
+        for (let i = 0; i < currentWords.length; i++) {
+            const word = currentWords[i];
+            const li = document.createElement("li");
+            li.textContent = word;
+            if (wordsFound[i]) {
+                li.classList.add("encontrada");
+            }
+            li.addEventListener("click", (() => {
+                if (!gameActive) return;
+                if (wordsFound[i]) {
+                    msgSpan.innerHTML = `⚠️ "${word}" ya la encontraste.`;
+                    return;
+                }
+                selectedWord = word;
+                selectedWordIdx = i;
+                msgSpan.innerHTML = `🔍 BUSCANDO: "${word}" → Arrastra sobre sus letras en el tablero`;
+                
+                // resetear estilos de palabras
+                document.querySelectorAll(".lista-palabras li").forEach(l => {
+                    l.classList.remove("seleccionada");
+                });
+                li.classList.add("seleccionada");
+                setTimeout(() => {
+                    if (selectedWord === word) li.classList.remove("seleccionada");
+                }, 500);
+            }));
+            wordListUl.appendChild(li);
+        }
+        totalSpan.textContent = currentWords.length;
+    }
+
+    // ---------- ARRASTRE ----------
+    function startDrag(e, cell) {
+        if (!gameActive) return;
+        if (!selectedWord) {
+            msgSpan.innerHTML = "❗ PRIMERO haz clic en una palabra de la lista.";
+            e.preventDefault();
+            return;
+        }
+        if (wordsFound[selectedWordIdx]) {
+            msgSpan.innerHTML = `❌ "${selectedWord}" ya la encontraste, elige otra.`;
+            return;
+        }
+        e.preventDefault();
+        isDragging = true;
+        draggedCells.clear();
+        clearTempHighlight();
+        addDragCell(cell);
+        
+        if (!mouseUpHandlerAttached) {
+            document.addEventListener("mouseup", endDrag);
+            document.addEventListener("touchend", endDragTouch);
+            mouseUpHandlerAttached = true;
+        }
+    }
+
+    function startDragTouch(e, cell) {
+        e.preventDefault();
+        if (!gameActive) return;
+        if (!selectedWord) {
+            msgSpan.innerHTML = "❗ Selecciona una palabra primero.";
+            return;
+        }
+        if (wordsFound[selectedWordIdx]) return;
+        isDragging = true;
+        draggedCells.clear();
+        clearTempHighlight();
+        addDragCell(cell);
+        if (!mouseUpHandlerAttached) {
+            document.addEventListener("touchend", endDragTouch);
+            mouseUpHandlerAttached = true;
+        }
+    }
+
+    function dragOver(e, cell) {
+        if (!isDragging || !gameActive) return;
+        e.preventDefault();
+        if (!selectedWord || wordsFound[selectedWordIdx]) {
+            endDragCleanup();
+            return;
+        }
+        addDragCell(cell);
+    }
+
+    function dragOverTouch(e, cell) {
+        if (!isDragging) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (elem && elem.classList && elem.classList.contains("celda")) {
+            addDragCell(elem);
+        }
+    }
+
+    function addDragCell(cell) {
+        const row = parseInt(cell.dataset.row);
+        const col = parseInt(cell.dataset.col);
+        const key = `${row},${col}`;
+        if (!draggedCells.has(key)) {
+            draggedCells.add(key);
+            cell.classList.add("sombreada");
+        }
+    }
+
+    function clearTempHighlight() {
+        document.querySelectorAll(".celda.sombreada").forEach(cell => {
+            cell.classList.remove("sombreada");
+        });
+    }
+
+    function endDrag() {
+        if (!isDragging) return;
+        isDragging = false;
+        if (!gameActive) {
+            clearTempHighlight();
+            draggedCells.clear();
+            return;
+        }
+        validateDragSelection();
+        clearTempHighlight();
+        draggedCells.clear();
+        endDragCleanup();
+    }
+
+    function endDragTouch(e) {
+        if (!isDragging) return;
+        e.preventDefault();
+        endDrag();
+    }
+
+    function endDragCleanup() {
+        isDragging = false;
+        if (mouseUpHandlerAttached) {
+            document.removeEventListener("mouseup", endDrag);
+            document.removeEventListener("touchend", endDragTouch);
+            mouseUpHandlerAttached = false;
+        }
+    }
+
+    function validateDragSelection() {
+        if (!selectedWord) {
+            msgSpan.innerHTML = "Selecciona una palabra antes de arrastrar.";
+            return;
+        }
+        if (wordsFound[selectedWordIdx]) {
+            msgSpan.innerHTML = `"${selectedWord}" ya fue encontrada.`;
+            return;
+        }
+
+        const expectedCoords = wordsPositions.get(selectedWord);
+        if (!expectedCoords) return;
+
+        const shadedCells = [];
+        document.querySelectorAll(".celda.sombreada").forEach(cell => {
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+            shadedCells.push({ row, col, element: cell });
+        });
+
+        if (shadedCells.length !== expectedCoords.length) {
+            applyError(`❌ Número incorrecto de letras (${shadedCells.length}/${expectedCoords.length}). Debes sombrear TODA la palabra.`);
+            return;
+        }
+
+        const dir = wordsDirection.get(selectedWord);
+        if (!dir) return;
+        const [dx, dy] = dir;
+        
+        // ordenar celdas sombreadas según dirección
+        let startIdx = 0;
+        let minVal = Infinity;
+        for (let i = 0; i < shadedCells.length; i++) {
+            const c = shadedCells[i];
+            let proj = 0;
+            if (dx !== 0) proj = c.row;
+            else if (dy !== 0) proj = c.col;
+            else proj = c.row + c.col;
+            if (proj < minVal) {
+                minVal = proj;
+                startIdx = i;
+            }
+        }
+        
+        const ordered = [];
+        let current = shadedCells[startIdx];
+        ordered.push(current);
+        let used = new Set();
+        used.add(`${current.row},${current.col}`);
+        
+        for (let step = 1; step < shadedCells.length; step++) {
+            const nextRow = current.row + dx;
+            const nextCol = current.col + dy;
+            const found = shadedCells.find(c => c.row === nextRow && c.col === nextCol && !used.has(`${c.row},${c.col}`));
+            if (found) {
+                ordered.push(found);
+                current = found;
+                used.add(`${found.row},${found.col}`);
+            } else break;
+        }
+        
+        if (ordered.length !== expectedCoords.length) {
+            applyError("❌ Las letras no están en línea recta o el orden es incorrecto.");
+            return;
+        }
+        
+        let match = true;
+        for (let i = 0; i < expectedCoords.length; i++) {
+            const exp = expectedCoords[i];
+            const dragged = ordered[i];
+            if (exp.fila !== dragged.row || exp.col !== dragged.col) {
+                match = false;
+                break;
+            }
+        }
+        
+        if (match) {
+            wordsFound[selectedWordIdx] = true;
+            hits++;
+            hitSpan.textContent = hits;
+            msgSpan.innerHTML = `🎉 CORRECTO! Encontraste "${selectedWord}" 🎉`;
+            
+            for (let coord of expectedCoords) {
+                const cell = getCellElement(coord.fila, coord.col);
+                if (cell) {
+                    cell.classList.remove("sombreada");
+                    cell.classList.add("permanent");
+                }
+            }
+            selectedWord = null;
+            selectedWordIdx = -1;
+            renderWordList();
+            
+            if (hits === currentWords.length) {
+                gameActive = false;
+                msgSpan.innerHTML = "🏆 ¡VICTORIA! Encontraste todas las palabras 🏆";
+            }
+        } else {
+            applyError(`❌ ERROR: "${selectedWord}" no está en la posición correcta.`);
+        }
+    }
+    
+    function applyError(errMsg) {
+        if (!gameActive) return;
+        errors++;
+        errorSpan.textContent = errors;
+        msgSpan.innerHTML = errMsg + ` Vidas: ${MAX_ERRORS - errors}`;
+        
+        if (errors >= MAX_ERRORS) {
+            gameActive = false;
+            msgSpan.innerHTML = "💀 GAME OVER 💀 Presiona 'NUEVA PARTIDA'.";
+            selectedWord = null;
+            renderWordList();
+        }
+    }
+    
+    function getCellElement(row, col) {
+        const cells = document.querySelectorAll(".celda");
+        for (let c of cells) {
+            if (parseInt(c.dataset.row) === row && parseInt(c.dataset.col) === col) return c;
+        }
+        return null;
+    }
+    
+    function resetGame() {
+        const { matrix, words, posMap, dirMap } = generateBoard(6);
+        grid = matrix;
+        currentWords = words;
+        wordsPositions = posMap;
+        wordsDirection = dirMap;
+        wordsFound = new Array(currentWords.length).fill(false);
+        errors = 0;
+        hits = 0;
+        gameActive = true;
+        selectedWord = null;
+        selectedWordIdx = -1;
+        
+        errorSpan.textContent = "0";
+        hitSpan.textContent = "0";
+        msgSpan.innerHTML = "🔥 Selecciona una palabra → Arrastra sobre sus letras 🔥";
+        renderBoard();
+        renderWordList();
+    }
+    
+    resetBtn.addEventListener("click", () => resetGame());
+    resetGame();
+</script>
+</body>
+</html>
